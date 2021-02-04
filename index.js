@@ -329,6 +329,10 @@ export function setSharedWebCredentials(
   );
 }
 
+export function hasStrongBox() {
+  return RNKeychainManager.hasStrongBox();
+}
+
 /**
  * Inquire if the type of local authentication policy (LAPolicy) is supported
  * on this device with the device settings the user chose.
@@ -380,4 +384,5 @@ export default {
   resetGenericPassword,
   requestSharedWebCredentials,
   setSharedWebCredentials,
+  hasStrongBox,
 };

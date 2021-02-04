@@ -4,6 +4,7 @@ import android.os.Build;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
+import android.content.pm.PackageManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -273,11 +274,23 @@ public class KeychainModule extends ReactContextBaseJavaModule {
     return result;
   }
 
+  @ReactMethod
+  public void hasStrongBox(@NonNull final Promise promise) {
+    boolean result = hasStrongBox();
+    promise.resolve(result);
+    return;
+  }
+
+  public boolean hasStrongBox() {
+    return getReactApplicationContext().getPackageManager().hasSystemFeature(PackageManager.FEATURE_STRONGBOX_KEYSTORE);
+  }
+
   protected void getGenericPassword(@NonNull final String alias,
                                     @Nullable final ReadableMap options,
                                     @NonNull final Promise promise) {
     try {
       final ResultSet resultSet = prefsStorage.getEncryptedEntry(alias);
+      CipherStorage current;
 
       if (resultSet == null) {
         Log.e(KEYCHAIN_MODULE, "No entry found for service: " + alias);
@@ -285,10 +298,17 @@ public class KeychainModule extends ReactContextBaseJavaModule {
         return;
       }
 
+      boolean isStrongBox = hasStrongBox();
+
+      if (hasStrongBox()) {
       // get the best storage
-      final String accessControl = getAccessControlOrDefault(options);
-      final boolean useBiometry = getUseBiometry(accessControl);
-      final CipherStorage current = getCipherStorageForCurrentAPILevel(useBiometry);
+        final String accessControl = getAccessControlOrDefault(options);
+        final boolean useBiometry = getUseBiometry(accessControl);
+        current = getCipherStorageForCurrentAPILevel(useBiometry);
+      } else {
+        current = getSelectedStorage(options);
+      }
+
       final String rules = getSecurityRulesOrDefault(options);
 
       final PromptInfo promptInfo = getPromptInfo(options);
